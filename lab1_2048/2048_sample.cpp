@@ -463,16 +463,38 @@ public:
 	 * estimate the value of a given board
 	 */
 	virtual float estimate(const board& b) const {
-		// TODO
+		// initialize the total weight
+		float total_weight = 0;  
+		for (int i = 0; i < iso_last; i++) {
+			// get index
+			size_t index = indexof(isomorphic[i], b);  
 
+			// accumulate the weight
+			total_weight += operator[](index);  
+		}
+
+		return total_weight;
 	}
 
 	/**
 	 * update the value of a given board, and return its updated value
+	 * u have been splited
 	 */
 	virtual float update(const board& b, float u) {
 		// TODO
+		float updated_weight = 0.0f;
+		for (int i = 0; i < iso_last; i++) {
+			// get the same isomorphic pattern
+			size_t index = indexof(isomorphic[i], b);
 
+			// find current weight
+			operator[](index) += u; 
+
+			// update weight
+			updated_weight += operator[](index);  
+		}
+
+		return updated_weight;
 	}
 
 	/**
@@ -510,6 +532,13 @@ protected:
 
 	size_t indexof(const std::vector<int>& patt, const board& b) const {
 		// TODO
+		size_t index = 0;
+		for (size_t i = 0; i < patt.size(); i++) {
+			int value_at_pos = b.at(patt[i]);
+			index |= (value_at_pos & 0x0f) << (4 * i);
+		}
+
+		return index;
 	}
 
 	std::string nameof(const std::vector<int>& patt) const {
@@ -681,7 +710,16 @@ public:
 		for (state* move = after; move != after + 4; move++) {
 			if (move->assign(b)) {
 				// TODO
+				float after_score = move->reward();
+				board after_b = move->after_state();
 
+				// value needs to updated based in the model's prediction
+				float estimation = estimate(after_b) + after_score;
+
+				// update the esti value
+				move->set_value(estimation);
+
+				// choose the biggest value(esti) as the best move
 				if (move->value() > best->value())
 					best = move;
 			} else {
@@ -689,6 +727,8 @@ public:
 			}
 			debug << "test " << *move;
 		}
+		
+		//std::cout << *best << std::endl;
 		return *best;
 	}
 
@@ -708,7 +748,28 @@ public:
 	 */
 	void update_episode(std::vector<state>& path, float alpha = 0.1) const {
 		// TODO
+		for (int i = path.size() - 1; i >= 0; --i) {
+			// board(t)
+			board b = path[i+1].before_state();  
 
+			// reward(t+1)
+			float reward = path[i+1].reward();  
+
+			// TD target(t+1)
+			float target = reward;
+			if (i < path.size() - 1) {
+				target += path[i+1].value();
+			}
+
+			// TD error = target(t+1) - v(t)
+			float td_error = target - path[i].value();
+
+			// update value = v(t) + alpha * td_error
+			float new_value = path[i].value() + alpha * td_error;
+
+			// update board value
+			update(b, new_value);
+		}
 	}
 
 	/**
@@ -829,8 +890,8 @@ int main(int argc, const char* argv[]) {
 	// set the learning parameters
 	float alpha = 0.1;
 	size_t total = 100000;
-	unsigned seed;
-	__asm__ __volatile__ ("rdtsc" : "=a" (seed));
+	unsigned seed = 12345;
+	//__asm__ __volatile__ ("rdtsc" : "=a" (seed));
 	info << "alpha = " << alpha << std::endl;
 	info << "total = " << total << std::endl;
 	info << "seed = " << seed << std::endl;
