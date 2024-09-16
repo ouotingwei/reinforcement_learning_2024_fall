@@ -463,6 +463,7 @@ public:
 	 * estimate the value of a given board
 	 */
 	virtual float estimate(const board& b) const {
+		// TODO
 		// initialize the total weight
 		float total_weight = 0;  
 		for (int i = 0; i < iso_last; i++) {
@@ -725,6 +726,7 @@ public:
 			} else {
 				move->set_value(-std::numeric_limits<float>::max());
 			}
+
 			debug << "test " << *move;
 		}
 		
@@ -748,27 +750,19 @@ public:
 	 */
 	void update_episode(std::vector<state>& path, float alpha = 0.1) const {
 		// TODO
+		float target = 0.0f;
 		for (int i = path.size() - 1; i >= 0; --i) {
 			// board(t)
-			board b = path[i+1].before_state();  
+			board b = path[i].after_state();  
 
 			// reward(t+1)
-			float reward = path[i+1].reward();  
-
-			// TD target(t+1)
-			float target = reward;
-			if (i < path.size() - 1) {
-				target += path[i+1].value();
-			}
+			float reward = path[i].reward();  
 
 			// TD error = target(t+1) - v(t)
-			float td_error = target - path[i].value();
+			float td_error = target - estimate(b);
 
-			// update value = v(t) + alpha * td_error
-			float new_value = path[i].value() + alpha * td_error;
-
-			// update board value
-			update(b, new_value);
+			// TD target(t+1)
+			target = reward + update(b, alpha * td_error);
 		}
 	}
 
@@ -891,7 +885,7 @@ int main(int argc, const char* argv[]) {
 	float alpha = 0.1;
 	size_t total = 100000;
 	unsigned seed = 12345;
-	//__asm__ __volatile__ ("rdtsc" : "=a" (seed));
+	__asm__ __volatile__ ("rdtsc" : "=a" (seed));
 	info << "alpha = " << alpha << std::endl;
 	info << "total = " << total << std::endl;
 	info << "seed = " << seed << std::endl;
@@ -939,7 +933,7 @@ int main(int argc, const char* argv[]) {
 	}
 
 	// store the model into file
-	tdl.save("");
+	tdl.save("/home/wei/reinforcement_learning_2024_fall/lab1_2048/1.bin");
 
 	return 0;
 }
