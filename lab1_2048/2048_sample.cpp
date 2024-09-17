@@ -815,6 +815,14 @@ public:
 				info << "\t" << ((1 << t) & -2u) << "\t" << (accu * coef) << "%";
 				info << "\t(" << (stat[t] * coef) << "%)" << std::endl;
 			}
+
+			bool save = true;
+			if (save == true) {
+				static std::ofstream outfile("/home/ee605-wei/reinforcement_learning_2024_fall/weight_and_data/lab1/3_mean.txt", std::ios::app);
+
+				outfile << "ep:" << n << ", mean:" << mean << std::endl;
+			}
+
 			scores.clear();
 			maxtile.clear();
 		}
@@ -933,7 +941,7 @@ int main(int argc, const char* argv[]) {
 	}
 
 	// store the model into file
-	tdl.save("/home/ee605-wei/reinforcement_learning_2024_fall/lab1_2048/2_pc.bin");
+	tdl.save("/home/ee605-wei/reinforcement_learning_2024_fall/weight_and_data/lab1/3_pc.bin");
 
 	return 0;
 }
