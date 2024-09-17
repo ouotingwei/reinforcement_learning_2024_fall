@@ -882,8 +882,8 @@ int main(int argc, const char* argv[]) {
 	learning tdl;
 
 	// set the learning parameters
-	float alpha = 0.1;
-	size_t total = 100000;
+	float alpha = 0.01;
+	size_t total = 200000;
 	unsigned seed = 12345;
 	__asm__ __volatile__ ("rdtsc" : "=a" (seed));
 	info << "alpha = " << alpha << std::endl;
@@ -892,10 +892,10 @@ int main(int argc, const char* argv[]) {
 	std::srand(seed);
 
 	// initialize the features
-	tdl.add_feature(new pattern({ 0, 1, 2, 3, 4, 5 }));
-	tdl.add_feature(new pattern({ 4, 5, 6, 7, 8, 9 }));
-	tdl.add_feature(new pattern({ 0, 1, 2, 4, 5, 6 }));
-	tdl.add_feature(new pattern({ 4, 5, 6, 8, 9, 10 }));
+	tdl.add_feature(new pattern({ 0, 4, 3, 12, 13, 9 }));
+	tdl.add_feature(new pattern({ 1, 5, 9, 13, 14, 10 }));
+	tdl.add_feature(new pattern({ 1, 5, 9, 10, 6, 2 }));
+	tdl.add_feature(new pattern({ 2, 6, 10, 11, 7, 3 }));
 
 	// restore the model from file
 	tdl.load("");
@@ -933,7 +933,7 @@ int main(int argc, const char* argv[]) {
 	}
 
 	// store the model into file
-	tdl.save("/home/wei/reinforcement_learning_2024_fall/lab1_2048/1.bin");
+	tdl.save("/home/ee605-wei/reinforcement_learning_2024_fall/lab1_2048/2_pc.bin");
 
 	return 0;
 }
