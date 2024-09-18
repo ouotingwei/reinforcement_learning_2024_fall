@@ -713,11 +713,11 @@ public:
 				// TODO
 				float current_score = move->reward();
 				board after_b = move->after_state();
-
 				int expect_denom = 0;
 				float expect_value = 0.0;
+				
 				for (int i = 0; i < 16; i++) {
-					board temp = b;
+					board temp = after_b;
 					if ( temp.at(i) == 0) {
 						expect_denom ++;
 						// pop 2 -> 90%
@@ -725,7 +725,7 @@ public:
 						expect_value += 0.9 * (estimate(temp) + current_score);
 
 						// pop 4 -> 10%
-						temp = b;
+						temp = after_b;
 						temp.set(i, 2);
 						expect_value += 0.1 * (estimate(temp) + current_score);
 					}
@@ -773,19 +773,33 @@ public:
 		float target = 0.0f;
 		for (int i = path.size() - 1; i >= 0; --i) {
 			// board(t)
-			board b_before = path[i].before_state();
-			board b_after  = path[i+1].before_state(); 
+			board b = path[i].before_state();
 
 			// reward(t+1)
 			float reward = path[i].reward();  
 
 			// TD error = target(t+1) - v(t)
-			float td_error = target - estimate(b_after);
+			float td_error = target - estimate(b);
 
-			// TD target(t+1)
-			target = reward + update(b_before, alpha * td_error);
+			// TD target = R(t+1) + S(t+1).value()
+			target = reward + update(b, alpha * td_error);
 		}
 	}
+
+		// void update_episode(std::vector<state>& path, float alpha = 0.1) const {
+		// 	// TODO
+		// 	/*
+		// 	for each state from the end of path to the beginning
+		// 		1. calculate the error
+		// 		2. get the next target value and update the weight
+		// 	*/
+		// 	float target = 0, error = 0;
+		// 	while(!path.empty()){
+		// 		state& s = path.back();	path.pop_back();
+		// 		error = target - estimate(s.before_state());
+		// 		target = s.reward() + update(s.before_state(), alpha * error);
+		// 	}
+		// }
 
 	/**
 	 * update the statistic, and display the status once in 1000 episodes by default
