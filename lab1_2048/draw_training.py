@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 episodes = []
 means = []
 
-with open('/home/ee605-wei/reinforcement_learning_2024_fall/weight_and_data/lab1/3_mean.txt', 'r') as file:
+with open('/home/ee605-wei/reinforcement_learning_2024_fall/weight_and_data/lab1/4_mean.txt', 'r') as file:
     for line in file:
         parts = line.strip().split(', ')
         ep = int(parts[0].split(':')[1])  

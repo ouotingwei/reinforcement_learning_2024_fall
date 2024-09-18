@@ -711,14 +711,34 @@ public:
 		for (state* move = after; move != after + 4; move++) {
 			if (move->assign(b)) {
 				// TODO
-				float after_score = move->reward();
+				float current_score = move->reward();
 				board after_b = move->after_state();
 
-				// value needs to updated based in the model's prediction
-				float estimation = estimate(after_b) + after_score;
+				int expect_denom = 0;
+				float expect_value = 0.0;
+				for (int i = 0; i < 16; i++) {
+					board temp = b;
+					if ( temp.at(i) == 0) {
+						expect_denom ++;
+						// pop 2 -> 90%
+						temp.set(i, 1);
+						expect_value += 0.9 * (estimate(temp) + current_score);
+
+						// pop 4 -> 10%
+						temp = b;
+						temp.set(i, 2);
+						expect_value += 0.1 * (estimate(temp) + current_score);
+					}
+				}
+
+				if (expect_denom > 0) {
+					expect_value /= expect_denom;
+				} else {
+					expect_value = 0;
+				}
 
 				// update the esti value
-				move->set_value(estimation);
+				move->set_value(expect_value);
 
 				// choose the biggest value(esti) as the best move
 				if (move->value() > best->value())
@@ -753,16 +773,17 @@ public:
 		float target = 0.0f;
 		for (int i = path.size() - 1; i >= 0; --i) {
 			// board(t)
-			board b = path[i].after_state();  
+			board b_before = path[i].before_state();
+			board b_after  = path[i+1].before_state(); 
 
 			// reward(t+1)
 			float reward = path[i].reward();  
 
 			// TD error = target(t+1) - v(t)
-			float td_error = target - estimate(b);
+			float td_error = target - estimate(b_after);
 
 			// TD target(t+1)
-			target = reward + update(b, alpha * td_error);
+			target = reward + update(b_before, alpha * td_error);
 		}
 	}
 
@@ -818,7 +839,7 @@ public:
 
 			bool save = true;
 			if (save == true) {
-				static std::ofstream outfile("/home/ee605-wei/reinforcement_learning_2024_fall/weight_and_data/lab1/3_mean.txt", std::ios::app);
+				static std::ofstream outfile("/home/ee605-wei/reinforcement_learning_2024_fall/weight_and_data/lab1/4_mean.txt", std::ios::app);
 
 				outfile << "ep:" << n << ", mean:" << mean << std::endl;
 			}
@@ -891,7 +912,7 @@ int main(int argc, const char* argv[]) {
 
 	// set the learning parameters
 	float alpha = 0.01;
-	size_t total = 200000;
+	size_t total = 1000000;
 	unsigned seed = 12345;
 	__asm__ __volatile__ ("rdtsc" : "=a" (seed));
 	info << "alpha = " << alpha << std::endl;
@@ -900,10 +921,10 @@ int main(int argc, const char* argv[]) {
 	std::srand(seed);
 
 	// initialize the features
-	tdl.add_feature(new pattern({ 0, 4, 3, 12, 13, 9 }));
-	tdl.add_feature(new pattern({ 1, 5, 9, 13, 14, 10 }));
-	tdl.add_feature(new pattern({ 1, 5, 9, 10, 6, 2 }));
-	tdl.add_feature(new pattern({ 2, 6, 10, 11, 7, 3 }));
+	tdl.add_feature(new pattern({ 0, 1, 2, 3, 4, 5 }));
+	tdl.add_feature(new pattern({ 4, 5, 6, 7, 8, 9 }));
+	tdl.add_feature(new pattern({ 0, 1, 2, 4, 5, 6 }));
+	tdl.add_feature(new pattern({ 4, 5, 6, 8, 9, 10 }));
 
 	// restore the model from file
 	tdl.load("");
@@ -941,7 +962,7 @@ int main(int argc, const char* argv[]) {
 	}
 
 	// store the model into file
-	tdl.save("/home/ee605-wei/reinforcement_learning_2024_fall/weight_and_data/lab1/3_pc.bin");
+	tdl.save("/home/ee605-wei/reinforcement_learning_2024_fall/weight_and_data/lab1/4_pc.bin");
 
 	return 0;
 }
