@@ -715,7 +715,7 @@ public:
 				board after_b = move->after_state();
 				int expect_denom = 0;
 				float expect_value = 0.0;
-				
+
 				for (int i = 0; i < 16; i++) {
 					board temp = after_b;
 					if ( temp.at(i) == 0) {
@@ -775,31 +775,16 @@ public:
 			// board(t)
 			board b = path[i].before_state();
 
-			// reward(t+1)
+			// R(t+1)
 			float reward = path[i].reward();  
 
 			// TD error = target(t+1) - v(t)
 			float td_error = target - estimate(b);
 
-			// TD target = R(t+1) + S(t+1).value()
+			// TD target = R(t+1) + alpha*td_error
 			target = reward + update(b, alpha * td_error);
 		}
 	}
-
-		// void update_episode(std::vector<state>& path, float alpha = 0.1) const {
-		// 	// TODO
-		// 	/*
-		// 	for each state from the end of path to the beginning
-		// 		1. calculate the error
-		// 		2. get the next target value and update the weight
-		// 	*/
-		// 	float target = 0, error = 0;
-		// 	while(!path.empty()){
-		// 		state& s = path.back();	path.pop_back();
-		// 		error = target - estimate(s.before_state());
-		// 		target = s.reward() + update(s.before_state(), alpha * error);
-		// 	}
-		// }
 
 	/**
 	 * update the statistic, and display the status once in 1000 episodes by default
@@ -853,7 +838,7 @@ public:
 
 			bool save = true;
 			if (save == true) {
-				static std::ofstream outfile("/home/ee605-wei/reinforcement_learning_2024_fall/weight_and_data/lab1/4_mean.txt", std::ios::app);
+				static std::ofstream outfile("", std::ios::app);
 
 				outfile << "ep:" << n << ", mean:" << mean << std::endl;
 			}
@@ -926,7 +911,7 @@ int main(int argc, const char* argv[]) {
 
 	// set the learning parameters
 	float alpha = 0.01;
-	size_t total = 1000000;
+	size_t total = 100000;
 	unsigned seed = 12345;
 	__asm__ __volatile__ ("rdtsc" : "=a" (seed));
 	info << "alpha = " << alpha << std::endl;
@@ -976,7 +961,7 @@ int main(int argc, const char* argv[]) {
 	}
 
 	// store the model into file
-	tdl.save("/home/ee605-wei/reinforcement_learning_2024_fall/weight_and_data/lab1/4_pc.bin");
+	tdl.save("");
 
 	return 0;
 }
