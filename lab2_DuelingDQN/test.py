@@ -12,15 +12,14 @@ if __name__ == '__main__':
 		"eps_decay": 1000000,
 		"eval_epsilon": 0.01,
 		"replay_buffer_capacity": 100000,
-		"logdir": '/home/ee605-wei/reinforcement_learning_2024_fall/weight_and_data/lab2/pcaman_DQN2_yes',
+		"logdir": '/home/ee605-wei/reinforcement_learning_2024_fall/weight_and_data/lab2/enduro-v5',
 		"update_freq": 4,
 		"update_target_freq": 10000,
 		"learning_rate": 0.0000625,
         "eval_interval": 100,
         "eval_episode": 5,
         "env_id": 'ALE/MsPacman-v5',
-        #"env_id": 'ALE/Pacman-v5',
 		#"env_id": 'ALE/Enduro-v5',
 	}
     agent = AtariDQNAgent(config)
-    agent.train()
+    agent.load_and_evaluate("/home/ee605-wei/reinforcement_learning_2024_fall/weight_and_data/lab2/deuling/model_26453633_4698.pth")
