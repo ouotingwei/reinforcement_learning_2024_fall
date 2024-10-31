@@ -3,7 +3,7 @@ import torch.nn as nn
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 from base_agent import DQNBaseAgent
-from lab2_DuelingDQN.models.atari_model_dueling import AtariNetDQN
+from models.atari_model import AtariNetDQN
 import gym
 import random
 
@@ -22,8 +22,8 @@ class AtariDQNAgent(DQNBaseAgent):
 
 		### TODO ###
 		# initialize test_env
-		self.test_env = gym.make(config["env_id"], render_mode="rgb_array")
-		#self.test_env = gym.make(config["env_id"], render_mode="human")
+		#self.test_env = gym.make(config["env_id"], render_mode="rgb_array")
+		self.test_env = gym.make(config["env_id"], render_mode="human")
 		self.test_env = atari_preprocessing.AtariPreprocessing(self.test_env, screen_size=84, grayscale_obs=True, frame_skip=1)
 		self.test_env = FrameStack(self.test_env, 4)
 
@@ -76,11 +76,8 @@ class AtariDQNAgent(DQNBaseAgent):
 
 		# 2. get max_a Q(s, a) from the target network
 		with torch.no_grad():
-			# Behavior network selects the action with max Q-value for the next state
-			next_action = self.behavior_net(next_state).max(1)[1].unsqueeze(1)
-
-			# Target network calculates the Q-value for the action selected by the behavior network
-			q_next = self.target_net(next_state).gather(1, next_action) 
+			# target network predicts Q-value for next state & select the maximum
+			q_next = self.target_net(next_state).max(1)[0].unsqueeze(1)
 			
 			# calculate Q_target = r + gamma * max_a Q(s',a)
 			# if episode terminates at next_state, then q_target = reward
