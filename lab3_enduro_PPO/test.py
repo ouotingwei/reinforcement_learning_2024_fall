@@ -11,17 +11,15 @@ if __name__ == '__main__':
 		"clip_epsilon": 0.2,
 		"max_gradient_norm": 0.5,
 		"batch_size": 1024,
-		"logdir": '/home/ee605-wei/reinforcement_learning_2024_fall/weight_and_data/lab3_1024_small_small',
+		"logdir": '/home/ee605-wei/reinforcement_learning_2024_fall/weight_and_data/lab3',
 		"update_ppo_epoch": 3,
-		"learning_rate": 1e-6,
+		"learning_rate": 2.5e-4,
 		"value_coefficient": 0.5,
 		"entropy_coefficient": 0.01,
 		"horizon": 128,
 		"env_id": 'ALE/Enduro-v5',
 		"eval_interval": 100,
-		"eval_episode": 3,
+		"eval_episode": 5,
 	}
-
 	agent = AtariPPOAgent(config)
-	agent.load("/home/ee605-wei/reinforcement_learning_2024_fall/weight_and_data/lab3_1024bat_smaller_training_rate/model_25145984_2308.pth")
-	agent.train()
+	agent.load_and_evaluate("/home/ee605-wei/reinforcement_learning_2024_fall/weight_and_data/lab3/lab3_1024_small_small/model_18329374_2363.pth")

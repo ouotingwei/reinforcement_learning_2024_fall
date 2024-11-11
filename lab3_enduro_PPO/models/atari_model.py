@@ -31,35 +31,40 @@ class AtariNet(nn.Module):
             self._initialize_weights()
 
     def forward(self, x, eval=False, a=[]):
+        # enormalization
         x = x.float() / 255.
+
+        # cnn feature extraction
         x = self.cnn(x)
         x = torch.flatten(x, start_dim=1)
 
-        # get the state value
+        # get the state value ( the expective reward in  current observation )
         value = self.value(x)
         value = torch.squeeze(value)
 
-        # get num_classes's probability distribution
+        # get action probability distribution
         logits = self.action_logits(x)
         
         dist = Categorical(logits=logits)
         
         ### TODO ###
-        # Finish the forward function
-        # evaluation -> choose the action which had the hightest probability 
         if eval:
+            # evaluation mode, chose the action which have the highest probability
             action = torch.argmax(logits, dim=1)
         
-        # training -> random sample
         else:
+            # training mode, according to the probablility distribution choose the action randomly ( random explore )
             action = dist.sample()
 
         if len(a) == 0:
+            # evaluation, calculate the log probability according to the action from the curren policy
             log_probability = dist.log_prob(action)
         else:
+            # training, calculate the log probabiltiy based on the eexternally provided action a
             log_probability = dist.log_prob(a)
 
         log_probability = torch.squeeze(log_probability)
+        # calculate the entropy ( uncertainty )
         entropy = dist.entropy().mean()
 
         return action, log_probability, value, entropy
