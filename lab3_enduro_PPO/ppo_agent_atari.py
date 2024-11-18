@@ -67,35 +67,42 @@ class AtariPPOAgent(PPOBaseAgent):
 		total_entropy = 0
 		total_loss = 0
 
-		# extract a few states from the replay buffer
+		# extract a few data(state) from the replay buffer, including gamma and lambda
 		batches = self.gae_replay_buffer.extract_batch(self.discount_factor_gamma, self.discount_factor_lambda)
 		sample_count = len(batches["action"])
 		# mess up the index whitch extracted from buffer
 		batch_index = np.random.permutation(sample_count)
 		
 		# create a dictionary to store the batch of observations
+		# observation -> observation batch -> training input
 		observation_batch = {}
 		for key in batches["observation"]:
 			observation_batch[key] = batches["observation"][key][batch_index]
 
-		# extract action, advantage, observation from batch data
+		# extract action, advantage, observation from batch data ( previous update )
 		action_batch = batches["action"][batch_index]
 		return_batch = batches["return"][batch_index]
 		adv_batch = batches["adv"][batch_index]
 		v_batch = batches["value"][batch_index]
 		logp_pi_batch = batches["logp_pi"][batch_index]
 
+		# ppo update "update_coiunt" times
 		for _ in range(self.update_count):
+			# batch -> small batch (size = batch size)
 			for start in range(0, sample_count, self.batch_size):
+				# construct training batch
 				ob_train_batch = {}
 				for key in observation_batch:
 					ob_train_batch[key] = observation_batch[key][start:start + self.batch_size]
+
+				# extract mini-batch
 				ac_train_batch = action_batch[start:start + self.batch_size]
 				return_train_batch = return_batch[start:start + self.batch_size]
 				adv_train_batch = adv_batch[start:start + self.batch_size]
 				v_train_batch = v_batch[start:start + self.batch_size]
 				logp_pi_train_batch = logp_pi_batch[start:start + self.batch_size]
 
+				# data -> tensor -> gpu
 				ob_train_batch = torch.from_numpy(ob_train_batch["observation_2d"])
 				ob_train_batch = ob_train_batch.to(self.device, dtype=torch.float32)
 
@@ -112,28 +119,29 @@ class AtariPPOAgent(PPOBaseAgent):
 				return_train_batch = return_train_batch.to(self.device, dtype=torch.float32)
 
 				### TODO ###
-				# calculate loss and update network
+				# calculate loss and update network ( forward )
 				_, log_probability, value, entropy = self.net(ob_train_batch, False, torch.squeeze(ac_train_batch))
 
-				# calculate policy loss
+				# calculate Surrogate Loss ( clip )
 				ratio = torch.exp(log_probability - logp_pi_train_batch)
 				loss_1 = ratio * adv_train_batch
 				loss_2 = torch.clamp(ratio, 1-self.clip_epsilon, 1+self.clip_epsilon) * adv_train_batch
 				surrogate_loss = -torch.mean(torch.min(loss_1, loss_2))
 
-				# calculate value loss
+				# calculate value loss ( diff between esti reward & real reward)
 				value_criterion = nn.MSELoss()
 				v_loss = value_criterion(value, return_train_batch)
 				
 				# calculate total loss
 				loss = surrogate_loss + self.value_coefficient * v_loss - self.entropy_coefficient * entropy
 
-				# update network
+				# update network ( back propagation)
 				self.optim.zero_grad()
 				loss.backward()
 				nn.utils.clip_grad_norm_(self.net.parameters(), self.max_gradient_norm)
 				self.optim.step()
 
+				# accumulate & record
 				total_surrogate_loss += surrogate_loss.item()
 				total_v_loss += v_loss.item()
 				total_entropy += entropy.item()
