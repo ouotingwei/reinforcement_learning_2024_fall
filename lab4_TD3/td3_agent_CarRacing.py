@@ -52,7 +52,8 @@ class CarRacingTD3Agent(TD3BaseAgent):
 		### TODO ###
 		#based on the behavior (actor) network and exploration noise
 		with torch.no_grad():
-			state = torch.tensor(np.array(state), dtype=torch.float, device=self.device).unsqueeze(0)
+			#state = torch.tensor(np.array(state), dtype=torch.float, device=self.device).unsqueeze(0)
+			state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
 			action = self.actor_net(state, brake_rate).cpu().numpy().squeeze() + sigma * self.noise.generate()
 
 		return action
@@ -78,7 +79,7 @@ class CarRacingTD3Agent(TD3BaseAgent):
 			a_next = a_next = a_next + noise
 
 			q_next1 = self.target_critic_net1(next_state, a_next)
-			q_next2 = self.target_critic_net2(next_state, action)
+			q_next2 = self.target_critic_net2(next_state, a_next)
 			# select min q value from q_next1 and q_next2 (double Q learning)
 			q_target = reward + self.gamma * torch.min(q_next1, q_next2)
 		
