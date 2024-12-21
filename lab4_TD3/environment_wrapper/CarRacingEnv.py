@@ -38,10 +38,29 @@ class CarRacingEnvironment:
 		grass_pixel_count = cv2.countNonZero(grass_mask)
 
 		# save image for debugging
-		# filename = "images/image" + str(self.ep_len) + ".jpg"
+		# filename = "/home/ee605-wei/reinforcement_learning_2024_fall/debug" + str(self.ep_len) + ".jpg"
 		# cv2.imwrite(filename, part_image)
 
 		return road_pixel_count, grass_pixel_count
+	
+	def road_ratio_near_car(self, obs):
+		# cut the image to get the part where the car is
+		part_image = obs[60:84, 40:60, :]
+
+		road_color_lower = np.array([90, 90, 90], dtype=np.uint8)
+		road_color_upper = np.array([120, 120, 120], dtype=np.uint8)
+		grass_color_lower = np.array([90, 180, 90], dtype=np.uint8)
+		grass_color_upper = np.array([120, 255, 120], dtype=np.uint8)
+		road_mask = cv2.inRange(part_image, road_color_lower, road_color_upper)
+		grass_mask = cv2.inRange(part_image, grass_color_lower, grass_color_upper)
+		# count the number of pixels in the road and grass
+		road_pixel_count = cv2.countNonZero(road_mask)
+		grass_pixel_count = cv2.countNonZero(grass_mask)
+		
+		total_pixel_count = part_image.shape[0] * part_image.shape[1]
+		road_ratio = road_pixel_count / total_pixel_count if total_pixel_count > 0 else 0
+
+		return road_ratio
 
 	def step(self, action):
 		obs, reward, terminates, truncates, info = self.env.step(action)
@@ -51,11 +70,13 @@ class CarRacingEnvironment:
 		road_pixel_count, grass_pixel_count = self.check_car_position(obs)
 		info["road_pixel_count"] = road_pixel_count
 		info["grass_pixel_count"] = grass_pixel_count
-
-		# my reward shaping strategy, you can try your own
+		
+		# My reward shaping strategy with staged adjustments
 		if road_pixel_count < 10:
 			terminates = True
-			reward = -100
+			reward = -100 
+		else:
+			reward += (0.01*self.ep_len) + 0.01*self.road_ratio_near_car(obs)
 
 		# convert to grayscale
 		obs = cv2.cvtColor(obs, cv2.COLOR_BGR2GRAY) # 96x96
@@ -77,7 +98,7 @@ class CarRacingEnvironment:
 		return obs, reward, terminates, truncates, info
 	
 	def reset(self):
-		obs, info = self.env.reset()
+		obs, info = self.env.reset(seed=2712)
 		self.ep_len = 0
 		obs = cv2.cvtColor(obs, cv2.COLOR_BGR2GRAY) # 96x96
 

@@ -42,7 +42,7 @@ class CarRacingTD3Agent(TD3BaseAgent):
 
 		# choose Gaussian noise or OU noise
 		noise_mean = np.full(self.env.action_space.shape[0], 0.0, np.float32)
-		noise_std = np.full(self.env.action_space.shape[0], 1.0, np.float32)
+		noise_std = np.full(self.env.action_space.shape[0], 0.5, np.float32)
 		self.noise = OUNoiseGenerator(noise_mean, noise_std)
 
 		# self.noise = GaussianNoise(self.env.action_space.shape[0], 0.0, 1.0)
@@ -72,16 +72,17 @@ class CarRacingTD3Agent(TD3BaseAgent):
 		# critic loss
 		q_value1 = self.critic_net1(state, action)
 		q_value2 = self.critic_net2(state, action)
+
 		with torch.no_grad():
 		 	# select action a_next from target actor network and add noise for smoothing
 			a_next = self.target_actor_net(next_state)
 			noise = torch.tensor(self.noise.generate(), dtype=torch.float32, device=a_next.device)
-			a_next = a_next = a_next + noise
+			a_next = a_next + noise
 
 			q_next1 = self.target_critic_net1(next_state, a_next)
 			q_next2 = self.target_critic_net2(next_state, a_next)
 			# select min q value from q_next1 and q_next2 (double Q learning)
-			q_target = reward + self.gamma * torch.min(q_next1, q_next2)
+			q_target = reward + self.gamma * torch.min(q_next1, q_next2) * (1 - done)
 		
 		# critic loss function
 		criterion = nn.MSELoss()
